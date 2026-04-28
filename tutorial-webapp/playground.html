@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MCP Playground</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fff;
+    --border: #e5e5e5;
+    --sidebar-bg: #f7f7f7;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --code-bg: #0d1117;
+    --accent: #cf4500;
+    --tool-bg: #f0f9ff;
+    --tool-border: #bae6fd;
+    --result-bg: #f0fdf4;
+    --result-border: #bbf7d0;
+    --error-bg: #fef2f2;
+    --error-border: #fecaca;
+    --radius: 6px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "Fira Code", Menlo, monospace;
+  }
+
+  html, body { height: 100%; font-family: var(--font); color: var(--text); background: var(--bg); line-height: 1.5; }
+
+  /* ── Top bar ── */
+  #topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 52px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 10;
+  }
+  #topbar h1 { font-size: 15px; font-weight: 600; }
+  #topbar a {
+    font-size: 13px; color: var(--text-muted); text-decoration: none;
+  }
+  #topbar a:hover { color: var(--text); }
+
+  /* ── Page body ── */
+  #page { padding: 28px 32px 60px; display: flex; flex-direction: column; gap: 28px; }
+
+  /* ── Section ── */
+  .section { border: 1px solid var(--border); border-radius: var(--radius); }
+  .section-header { border-radius: var(--radius) var(--radius) 0 0; }
+  .editor-container { overflow: hidden; }
+
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--sidebar-bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .lang-badge {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    color: var(--text-muted); background: var(--border);
+    padding: 2px 6px; border-radius: 3px;
+  }
+
+  .section-actions { display: flex; align-items: center; gap: 8px; }
+
+  /* ── Ace editor ── */
+  .editor-container { height: 360px; }
+
+  .section-footer {
+    padding: 6px 16px; background: var(--sidebar-bg);
+    border-top: 1px solid var(--border);
+    min-height: 30px; display: flex; align-items: center;
+  }
+  .status-text { font-size: 12px; color: var(--text-muted); }
+  .status-text.ok { color: #16a34a; font-weight: 500; }
+  .status-text.err { color: #dc2626; }
+
+  /* ── Chat ── */
+  #chat-messages {
+    min-height: 240px; max-height: 480px; overflow-y: auto;
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    background: #fafafa;
+  }
+
+  .msg { display: flex; flex-direction: column; max-width: 78%; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.assistant { align-self: flex-start; align-items: flex-start; }
+
+  .msg-label {
+    font-size: 11px; color: var(--text-muted); margin-bottom: 3px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+  }
+
+  .msg-bubble {
+    padding: 10px 14px; border-radius: 12px;
+    font-size: 14px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+  }
+  .msg.user .msg-bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 3px; }
+  .msg.assistant .msg-bubble {
+    background: var(--bg); border: 1px solid var(--border); border-bottom-left-radius: 3px;
+  }
+  .msg.assistant .msg-bubble code {
+    font-family: var(--mono); font-size: .85em;
+    background: #f0f0f0; padding: 1px 4px; border-radius: 3px;
+  }
+
+  .tool-chip {
+    font-size: 12px; font-family: var(--mono);
+    padding: 6px 10px; border-radius: 6px; border: 1px solid;
+    align-self: flex-start; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .tool-chip.call   { background: var(--tool-bg);   border-color: var(--tool-border);   color: #0369a1; }
+  .tool-chip.result { background: var(--result-bg); border-color: var(--result-border); color: #15803d; }
+  .tool-chip.err    { background: var(--error-bg);  border-color: var(--error-border);  color: #dc2626; }
+
+  .typing { display: flex; gap: 4px; padding: 10px 14px; }
+  .typing span { width: 6px; height: 6px; border-radius: 50%; background: #ccc; animation: bounce .9s infinite; }
+  .typing span:nth-child(2) { animation-delay: .15s; }
+  .typing span:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%,60%,100% { transform: none; } 30% { transform: translateY(-5px); } }
+
+  #chat-input-row {
+    display: flex; gap: 8px; padding: 10px;
+    border-top: 1px solid var(--border); background: var(--bg);
+  }
+  #chat-input {
+    flex: 1; font-family: var(--font); font-size: 14px;
+    padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+    resize: none; outline: none; height: 40px; max-height: 120px;
+    transition: border-color .15s;
+  }
+  #chat-input:focus { border-color: var(--accent); }
+
+  /* ── Buttons ── */
+  .btn {
+    font: 500 12px var(--font); padding: 6px 11px;
+    border-radius: 4px; border: 1px solid var(--border);
+    cursor: pointer; background: var(--bg); color: var(--text);
+    transition: background .12s;
+    white-space: nowrap;
+  }
+  .btn:hover:not(:disabled) { background: #f0f0f0; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover:not(:disabled) { background: #b83c00; }
+  .btn-danger  { background: #dc2626; color: #fff; border-color: #dc2626; }
+  .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+
+  #server-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #d1d5db;
+    display: inline-block; transition: background .3s;
+  }
+  #server-dot.running { background: #22c55e; }
+  #server-dot.error   { background: #ef4444; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.0/ace.min.js"></script>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>MCP Playground</h1>
+  <a href="/">← Back to tutorial</a>
+</div>
+
+<div id="page">
+
+  <!-- Python editor -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">
+        MCP Server
+        <span class="lang-badge">Python</span>
+      </div>
+      <div class="section-actions">
+        <span id="server-dot"></span>
+        <button id="run-btn" class="btn btn-primary">▶ Run</button>
+        <button id="stop-btn" class="btn btn-danger" disabled>■ Stop</button>
+      </div>
+    </div>
+    <div id="python-editor" class="editor-container"></div>
+    <div class="section-footer">
+      <span id="server-status" class="status-text"></span>
+    </div>
+  </div>
+
+  <!-- HTML editor -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">
+        App View
+        <span class="lang-badge">HTML</span>
+      </div>
+      <div class="section-actions">
+        <span id="save-status" class="status-text ok"></span>
+        <button id="save-view-btn" class="btn">💾 Save View</button>
+      </div>
+    </div>
+    <div id="html-editor" class="editor-container"></div>
+  </div>
+
+  <!-- Chat -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Chat with Claude</div>
+    </div>
+    <div id="chat-messages">
+      <div class="msg assistant">
+        <div class="msg-label">Claude</div>
+        <div class="msg-bubble">Start the MCP server above, then ask me to show you a dog. You can also ask for a specific breed.</div>
+      </div>
+    </div>
+    <div id="chat-input-row">
+      <textarea id="chat-input" placeholder="Ask Claude to show you a dog…" rows="1"></textarea>
+      <button id="send-btn" class="btn btn-primary">Send</button>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+// ── Editors (Ace) ──────────────────────────────────────────
+
+function makeEditor(id, mode) {
+  const editor = ace.edit(id);
+  editor.setTheme('ace/theme/tomorrow_night');
+  editor.session.setMode(`ace/mode/${mode}`);
+  editor.setOptions({ fontSize: '13px', showPrintMargin: false, tabSize: 4, useSoftTabs: true });
+  editor.renderer.setScrollMargin(12, 12, 0, 0);
+  return editor;
+}
+
+const pyEditor   = makeEditor('python-editor', 'python');
+const htmlEditor = makeEditor('html-editor',   'html');
+
+// ── Load defaults ──────────────────────────────────────────
+
+async function loadDefaults() {
+  const [pyRes, htmlRes] = await Promise.all([
+    fetch('/defaults/python'),
+    fetch('/defaults/html'),
+  ]);
+  pyEditor.setValue(await pyRes.text(), -1);
+  htmlEditor.setValue(await htmlRes.text(), -1);
+}
+
+loadDefaults();
+
+// ── Server management ──────────────────────────────────────
+
+const runBtn       = document.getElementById('run-btn');
+const stopBtn      = document.getElementById('stop-btn');
+const serverDot    = document.getElementById('server-dot');
+const serverStatus = document.getElementById('server-status');
+
+function setServerState(state, msg = '') {
+  serverDot.className = '';
+  if (state === 'running') {
+    serverDot.classList.add('running');
+    runBtn.disabled  = true;
+    stopBtn.disabled = false;
+    serverStatus.textContent = '● Server running';
+    serverStatus.className = 'status-text ok';
+  } else if (state === 'error') {
+    serverDot.classList.add('error');
+    runBtn.disabled  = false;
+    stopBtn.disabled = true;
+    serverStatus.textContent = msg || 'Server error';
+    serverStatus.className = 'status-text err';
+  } else {
+    runBtn.disabled  = false;
+    stopBtn.disabled = true;
+    serverStatus.textContent = msg;
+    serverStatus.className = 'status-text';
+  }
+}
+
+runBtn.addEventListener('click', async () => {
+  const code = pyEditor.getValue();
+  runBtn.disabled = true;
+  serverStatus.textContent = 'Starting…';
+  serverStatus.className = 'status-text';
+  try {
+    const res = await fetch('/server/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ python_code: code }),
+    });
+    if (res.ok) {
+      setServerState('running');
+    } else {
+      const err = await res.json().catch(() => ({}));
+      setServerState('error', err.detail || 'Failed to start');
+    }
+  } catch (e) {
+    setServerState('error', e.message);
+  }
+});
+
+stopBtn.addEventListener('click', async () => {
+  await fetch('/server/stop', { method: 'POST' });
+  setServerState('idle', 'Server stopped');
+});
+
+// ── View save ──────────────────────────────────────────────
+
+document.getElementById('save-view-btn').addEventListener('click', async () => {
+  const code  = htmlEditor.getValue();
+  const badge = document.getElementById('save-status');
+  try {
+    await fetch('/server/save-view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html_code: code }),
+    });
+    badge.textContent = '✓ Saved';
+    setTimeout(() => { badge.textContent = ''; }, 2000);
+  } catch (e) {
+    badge.textContent = 'Save failed';
+    badge.className = 'status-text err';
+  }
+});
+
+// ── Chat ───────────────────────────────────────────────────
+
+let chatHistory = [];
+let isStreaming  = false;
+
+const chatMessages = document.getElementById('chat-messages');
+const chatInput    = document.getElementById('chat-input');
+const sendBtn      = document.getElementById('send-btn');
+
+chatInput.addEventListener('input', () => {
+  chatInput.style.height = 'auto';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+});
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+sendBtn.addEventListener('click', sendMessage);
+
+function appendMsg(role, html) {
+  const wrap   = document.createElement('div');
+  wrap.className = `msg ${role}`;
+  const label  = document.createElement('div');
+  label.className = 'msg-label';
+  label.textContent = role === 'user' ? 'You' : 'Claude';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.innerHTML = html;
+  wrap.appendChild(label);
+  wrap.appendChild(bubble);
+  chatMessages.appendChild(wrap);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return bubble;
+}
+
+function appendChip(type, text) {
+  const chip = document.createElement('div');
+  chip.className = `tool-chip ${type}`;
+  chip.textContent = text;
+  chatMessages.appendChild(chip);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addTypingIndicator() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg assistant';
+  wrap.id = 'typing';
+  const label = document.createElement('div');
+  label.className = 'msg-label';
+  label.textContent = 'Claude';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  wrap.appendChild(label);
+  wrap.appendChild(bubble);
+  chatMessages.appendChild(wrap);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return wrap;
+}
+
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text || isStreaming) return;
+
+  isStreaming = true;
+  sendBtn.disabled = true;
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+
+  appendMsg('user', escHtml(text));
+  const typing = addTypingIndicator();
+
+  let bubble      = null;
+  let accumText   = '';
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history: chatHistory }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        let evt;
+        try { evt = JSON.parse(line.slice(6)); } catch { continue; }
+
+        if (evt.type === 'text') {
+          typing.remove();
+          if (!bubble) bubble = appendMsg('assistant', '');
+          accumText += evt.delta;
+          bubble.innerHTML = renderInline(accumText);
+
+        } else if (evt.type === 'tool_use') {
+          typing.remove();
+          const args = Object.entries(evt.input ?? {}).map(([k,v]) => `${k}=${JSON.stringify(v)}`).join(', ');
+          appendChip('call', `⚙ ${evt.name}(${args})`);
+
+        } else if (evt.type === 'tool_result') {
+          const preview = (evt.content ?? []).map(c => c.text).join(' ').slice(0, 140);
+          appendChip('result', `✓ ${evt.name} → ${preview}`);
+
+        } else if (evt.type === 'error') {
+          typing.remove();
+          appendChip('err', `✗ ${evt.text}`);
+
+        } else if (evt.type === 'done') {
+          chatHistory = evt.history ?? [];
+        }
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+    }
+  } catch (e) {
+    typing.remove();
+    appendChip('err', `✗ ${e.message}`);
+  }
+
+  isStreaming = false;
+  sendBtn.disabled = false;
+  chatInput.focus();
+}
+
+function renderInline(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/\n\n+/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^/, '<p>').replace(/$/, '</p>');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

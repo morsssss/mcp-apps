@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MCP Apps</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --content-max: 780px;
+    --bg: #fff;
+    --sidebar-bg: #f7f7f7;
+    --border: #e5e5e5;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --code-bg: #0d1117;
+    --tab-bg: #f1f1f1;
+    --tab-active-bg: #fff;
+    --accent: #cf4500;
+    --accent-light: #fff3ef;
+    --tool-bg: #f0f9ff;
+    --tool-border: #bae6fd;
+    --result-bg: #f0fdf4;
+    --result-border: #bbf7d0;
+    --error-bg: #fef2f2;
+    --error-border: #fecaca;
+    --radius: 6px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "Fira Code", Menlo, monospace;
+  }
+
+  html { font-size: 15px; }
+  body { font-family: var(--font); color: var(--text); background: var(--bg); line-height: 1.6; }
+
+  /* ── Layout ── */
+  #layout { display: flex; min-height: 100vh; }
+
+  #sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 32px 0 40px;
+  }
+
+  #sidebar-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-muted);
+    padding: 0 20px 12px;
+  }
+
+  #toc a {
+    display: block;
+    padding: 5px 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  #toc a:hover { color: var(--text); }
+  #toc a.active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+  #toc a.h3 { padding-left: 32px; font-size: 12.5px; }
+
+  #main {
+    flex: 1;
+    min-width: 0;
+    padding: 48px 64px 80px;
+    max-width: calc(var(--sidebar-w) + var(--content-max) + 128px);
+  }
+
+  /* ── Typography ── */
+  #tutorial-content h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+  #tutorial-content h2 { font-size: 1.4rem; font-weight: 600; margin: 20px 0 12px; padding-top: 20px; border-top: 1px solid var(--border); }
+  #tutorial-content h2:first-child, #tutorial-content h1 + h2 { border-top: none; padding-top: 0; margin-top: 24px; }
+  #tutorial-content h3 { font-size: 1.05rem; font-weight: 600; margin: 28px 0 10px; }
+  #tutorial-content h4 { font-size: .95rem; font-weight: 600; margin: 20px 0 8px; }
+  #tutorial-content p { margin-bottom: 16px; }
+  #tutorial-content ul, #tutorial-content ol { margin: 0 0 16px 24px; }
+  #tutorial-content li { margin-bottom: 4px; }
+  #tutorial-content a { color: var(--accent); text-decoration: none; }
+  #tutorial-content a:hover { text-decoration: underline; }
+  #tutorial-content strong { font-weight: 600; }
+  #tutorial-content hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+  /* Tables */
+  #tutorial-content table { border-collapse: collapse; width: 100%; margin-bottom: 16px; font-size: 14px; }
+  #tutorial-content th, #tutorial-content td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; }
+  #tutorial-content th { background: var(--sidebar-bg); font-weight: 600; }
+
+  /* Inline code */
+  #tutorial-content :not(pre) > code {
+    font-family: var(--mono);
+    font-size: .875em;
+    background: #f4f4f4;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  /* ── Code blocks ── */
+  .code-block-wrapper { margin: 20px 0; border-radius: var(--radius); overflow: hidden; border: 1px solid #2d333b; }
+  .code-block-wrapper pre { margin: 0; border-radius: 0; border: none; }
+  pre { margin: 20px 0; border-radius: var(--radius); overflow: auto; }
+  pre code { font-family: var(--mono); font-size: 13px; line-height: 1.6; display: block; padding: 18px 20px; }
+  .hljs { background: var(--code-bg); }
+
+  /* ── Language tabs ── */
+  .code-tabs { margin: 20px 0; border-radius: var(--radius); overflow: hidden; border: 1px solid #2d333b; }
+  .tab-bar { display: flex; background: #161b22; border-bottom: 1px solid #2d333b; padding: 0 4px; }
+  .tab-btn {
+    font-family: var(--mono); font-size: 12px; font-weight: 500;
+    color: #8b949e; background: none; border: none; cursor: pointer;
+    padding: 8px 14px; border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  .tab-btn:hover { color: #e6edf3; }
+  .tab-btn.active { color: #e6edf3; border-bottom-color: #f78166; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .tab-panel pre { margin: 0; border-radius: 0; border: none; }
+
+  /* ── Playground link ── */
+  #title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  a#playground-link {
+    display: inline-block;
+    padding: 8px 16px;
+    background: var(--accent); color: #fff;
+    border-radius: var(--radius); text-decoration: none;
+    font-size: 13px; font-weight: 600;
+    white-space: nowrap;
+    transition: background .15s;
+  }
+  a#playground-link:hover { background: #b83c00; text-decoration: none; }
+</style>
+</head>
+<body>
+<div id="layout">
+  <nav id="sidebar">
+    <div id="sidebar-title">On this page</div>
+    <div id="toc"></div>
+  </nav>
+
+  <div id="main">
+    <div id="playground-section">
+      <a id="playground-link" href="/playground" target="_blank">
+        Open Playground →
+      </a>
+    </div>
+
+    <div id="tutorial-content">Loading…</div>
+  </div>
+</div>
+
+<script type="module">
+// ── Markdown rendering ─────────────────────────────────────
+
+async function loadTutorial() {
+  const res = await fetch('/tutorial.md');
+  const md = await res.text();
+
+  marked.use({ gfm: true, breaks: false });
+
+  const html = marked.parse(md);
+  const container = document.getElementById('tutorial-content');
+  container.innerHTML = html;
+
+  // Add stable ids to headings for TOC anchors
+  container.querySelectorAll('h1, h2, h3, h4').forEach(h => {
+    h.id = h.textContent.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+  });
+
+  // Syntax highlight all code blocks
+  container.querySelectorAll('pre code').forEach(block => {
+    hljs.highlightElement(block);
+  });
+
+  applyCodeTabs(container);
+  buildTOC(container);
+
+  // Move the playground link inline with the h1
+  const h1 = container.querySelector('h1');
+  if (h1) {
+    const row = document.createElement('div');
+    row.id = 'title-row';
+    h1.replaceWith(row);
+    row.appendChild(h1);
+    row.appendChild(document.getElementById('playground-link'));
+    document.getElementById('playground-section').remove();
+  }
+}
+
+// Detect adjacent Python+JavaScript code blocks and wrap them in tabs
+function applyCodeTabs(container) {
+  const pres = Array.from(container.querySelectorAll('pre'));
+  let i = 0;
+  while (i < pres.length) {
+    const pre = pres[i];
+    const lang = getBlockLang(pre);
+    if ((lang === 'python' || lang === 'javascript') && i + 1 < pres.length) {
+      const nextPre = pres[i + 1];
+      if (nextPre.previousElementSibling === pre || nextPre.previousSibling === pre) {
+        const nextLang = getBlockLang(nextPre);
+        if (nextLang && nextLang !== lang && (nextLang === 'python' || nextLang === 'javascript')) {
+          const wrapper = buildTabWrapper([{lang, pre}, {lang: nextLang, pre: nextPre}]);
+          pre.parentNode.insertBefore(wrapper, pre);
+          pre.remove();
+          nextPre.remove();
+          pres[i] = wrapper;
+          pres.splice(i + 1, 1);
+        }
+      }
+    }
+    i++;
+  }
+}
+
+function getBlockLang(pre) {
+  const code = pre.querySelector('code');
+  if (!code) return null;
+  for (const cls of code.classList) {
+    if (cls.startsWith('language-')) return cls.slice(9);
+  }
+  return null;
+}
+
+function buildTabWrapper(tabs) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'code-tabs';
+  const bar = document.createElement('div');
+  bar.className = 'tab-bar';
+  const panels = tabs.map(({ lang, pre }, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (idx === 0 ? ' active' : '');
+    btn.textContent = { python: 'Python', javascript: 'JavaScript' }[lang] ?? lang;
+    btn.dataset.idx = idx;
+    bar.appendChild(btn);
+    const panel = document.createElement('div');
+    panel.className = 'tab-panel' + (idx === 0 ? ' active' : '');
+    panel.appendChild(pre);
+    return panel;
+  });
+  bar.addEventListener('click', e => {
+    const btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    const idx = +btn.dataset.idx;
+    wrapper.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+    wrapper.querySelectorAll('.tab-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+  });
+  wrapper.appendChild(bar);
+  panels.forEach(p => wrapper.appendChild(p));
+  return wrapper;
+}
+
+// ── Table of contents ──────────────────────────────────────
+
+function buildTOC(container) {
+  const headings = container.querySelectorAll('h2, h3');
+  const toc = document.getElementById('toc');
+  headings.forEach(h => {
+    const a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    if (h.tagName === 'H3') a.classList.add('h3');
+    toc.appendChild(a);
+  });
+
+  // Highlight active section on scroll
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        toc.querySelectorAll('a').forEach(a => a.classList.remove('active'));
+        const active = toc.querySelector(`a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' });
+  headings.forEach(h => observer.observe(h));
+}
+
+// ── Init ───────────────────────────────────────────────────
+loadTutorial();
+</script>
+</body>
+</html>

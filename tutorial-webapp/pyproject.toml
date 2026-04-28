@@ -1,0 +1,12 @@
+[project]
+name = "tutorial-webapp"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "anthropic>=0.50",
+    "fastmcp[apps]>=3.2.4",
+    "requests>=2.33",
+    "python-dotenv>=1.2.2",
+]

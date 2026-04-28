@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #77c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    img { max-width: 400px; border-radius: 8px; margin-top: 16px; }
+    form { margin-top: 14px; display: flex; gap: 10px; align-items: center; }
+    select, button {
+      font: inherit;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(0,0,0,0.18);
+      background: rgba(255,255,255,0.92);
+    }
+    button { font-weight: 600; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <img id="dog-img" src="" alt="Dog will appear here" />
+  <form id="breed-form">
+    <select id="breed-select">
+      <option value="">(choose a breed)</option>
+      <option value="bullterrier/staffordshire">pit bull</option>
+      <option value="doberman">doberman</option>
+      <option value="malamute">malamute</option>
+      <option value="pekinese">pekinese</option>
+      <option value="pug">pug</option>
+    </select>
+    <button type="submit">Get my dog</button>
+  </form>
+  <script type="module">
+    import { App } from "https://unpkg.com/@modelcontextprotocol/ext-apps@0.4.0/app-with-deps";
+    const app = new App({ name: "Dog Viewer", version: "1.0.0" });
+
+    function showDog(content) {
+      const url = content?.find(b => b.type === "text")?.text;
+      if (url) document.getElementById("dog-img").src = url;
+    }
+
+    app.ontoolresult = ({ content }) => showDog(content);
+    await app.connect();
+
+    document.getElementById("breed-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const breed = document.getElementById("breed-select").value;
+      if (!breed) return;
+      const result = await app.callServerTool({ name: "get_dog_by_breed", arguments: { breed } });
+      showDog(result?.content);
+    });
+  </script>
+</body>
+</html>

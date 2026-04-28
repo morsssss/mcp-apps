@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Dog images</title>
+  <style>
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      background-color: #77c;
+      color: #111;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    img {
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+  </style>
+  <script type="module">
+    import { App } from "https://unpkg.com/@modelcontextprotocol/ext-apps@0.4.0/app-with-deps";
+
+    const app = new App({ name: "Dog viewer", version: "1.0" });
+
+    // We expect the tool to send us an img URL. The `content` array should just contain an element whose type is 'text', which contains this URL.
+    app.ontoolresult = ({ content }) => {
+      const imgUrl = content[0].text;
+      const img = document.querySelector('img');
+      img.src = imgUrl;
+    };
+
+    await app.connect();
+  </script> 
+</head>
+
+<body>
+  <img />
+  <h2>It's a dog!</h2>
+</body>
+</html>
