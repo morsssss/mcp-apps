@@ -6,7 +6,7 @@ An interactive tutorial page for building MCP apps, with a live playground that 
 
 ## Requirements
 
-- Python 3.14+
+- Python 3.11+
 - [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - An Anthropic API key
 
