@@ -303,7 +303,7 @@ In fact, since Claude Desktop operates in a Chromium browser, it kindly lets you
 
 ## **Error-checking**
 
-To keep the code compact, we omitted basic error checking. Of course, not only would be essential to add this for production code, but these checks would help you debug during development as well.
+To keep the code compact, we omitted basic error checking. Of course, not only would it be essential to add this for production code, but these checks would help you debug during development as well.
 
 First of all, not all hosts support MCP apps. You can check each client’s context to find out. You’ll need to add these imports:
 
